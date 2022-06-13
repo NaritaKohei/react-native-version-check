@@ -1,35 +1,18 @@
-name: Test
+name: Publish Package to npmjs
 on:
-  push:
-    branches:
-      - master
-      - develop
-  pull_request:
+  release:
+    types: [created]
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node-version: [10.x, 12.x, 14.x]
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup node ${{ matrix.node-version }} in ${{ runner.OS }}
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
-      - name: Cache Node.js modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: ${{ runner.OS }}-${{ matrix.node-version }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-${{ matrix.node-version }}-node-
-            ${{ runner.OS }}-${{ matrix.node-version }}-
-            ${{ runner.OS }}-
-      - name: Install node modules
-        run: |
-          npm install
-          npm run lerna-bootstrap
-      - run: npm run test:ci
-      - run: npm run test:coverage
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
